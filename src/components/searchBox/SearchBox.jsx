@@ -1,25 +1,38 @@
+//* Libraries
+import style from "./SearchBox.module.css";
+import { CiSearch } from "react-icons/ci";
+import { motion } from "framer-motion";
+
+//* Redux
 import { useDispatch, useSelector } from "react-redux";
 import { changeFilter } from "../../redux/filtersSlice";
-import styles from "./SearchBox.module.css";
 
-export default function SearchBox() {
-  const filterValue = useSelector((state) => state.filters.name);
+const SearchBox = () => {
   const dispatch = useDispatch();
+  const filterData = useSelector((state) => state.filters.name);
 
-  const handeleChange = (e) => {
-    const value = e.target.value.trim();
-    value !== filterValue && dispatch(changeFilter(value));
+  const onSearchBoxChange = (event) => {
+    dispatch(changeFilter(event.target.value));
   };
-  // It's project was created by Vitalii Zvieriev
+
   return (
-    <div>
-      <p>Search contact:</p>
+    <motion.div
+      className={style.SearchBoxWrapper}
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <CiSearch className={style.searchIcon} />
       <input
-        className={styles.searchInput}
+        placeholder="Search"
+        className={style.contactInput}
+        value={filterData}
+        onChange={onSearchBoxChange}
         type="text"
-        value={filterValue}
-        onChange={handeleChange}
       />
-    </div>
+    </motion.div>
   );
-}
+};
+
+export default SearchBox;

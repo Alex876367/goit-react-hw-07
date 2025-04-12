@@ -1,36 +1,112 @@
-import { FaPhone, FaUser } from "react-icons/fa6";
-import { useDispatch } from "react-redux";
-import { deleteContact } from "../../redux/contactsOps";
-import styles from "./Contact.module.css";
+//* Libraries
+import style from "./Contact.module.css";
+import { motion } from "framer-motion";
+import toast, { Toaster } from "react-hot-toast";
+import { FaRegHeart } from "react-icons/fa";
+import { FaHeart } from "react-icons/fa6";
 
-export default function Contact({ contact }) {
+//* Redux
+import { useDispatch, useSelector } from "react-redux";
+import { selectError } from "../../redux/contactsSlice";
+import { selectFavContacts } from "../../redux/favSlice";
+import { deleteContact } from "../../redux/contactsOps";
+import { addFav } from "../../redux/favSlice";
+import { deleteFav } from "../../redux/favSlice";
+import { removeFromAllCategories } from "../../redux/categorySlice";
+
+//* Router
+import { NavLink } from "react-router-dom";
+
+//* Notifier
+const notifySuccessRemoove = (personName) =>
+  toast.success(`${personName} is successfully deleted!`, {
+    icon: "❌",
+  });
+
+const notifyFailure = () =>
+  toast.success(`Sorry! Something went wrong...`, {
+    icon: "❌",
+  });
+
+const Contact = ({ contactData }) => {
   const dispatch = useDispatch();
-  const heandleDelete = () => {
-    dispatch(deleteContact(contact.id));
+  const errorData = useSelector(selectError);
+  const favInfo = useSelector(selectFavContacts);
+  const isFav = favInfo.some((fav) => fav.id === contactData.id);
+
+  const handleDelete = async () => {
+    try {
+      await dispatch(deleteContact(contactData.id)).unwrap();
+      dispatch(deleteFav(contactData.id));
+      dispatch(removeFromAllCategories(contactData));
+
+      if (!errorData) {
+        notifySuccessRemoove(contactData.name);
+      }
+    } catch (error) {
+      notifyFailure();
+    }
   };
 
+  const handleToggleFav = () => {
+    const isFavorite = favInfo.some((fav) => fav.id === contactData.id);
+
+    if (isFavorite) {
+      dispatch(deleteFav(contactData.id));
+    } else {
+      dispatch(addFav(contactData));
+    }
+  };
+
+  const name = contactData.name.split(" ");
+  const firstName = name[0];
+  const secondName = name[1];
+
   return (
-    // It's project was created by Vitalii Zvieriev
-    <div className={styles.wrapper}>
-      <img
-        src={
-          contact.avatar ??
-          `https://ui-avatars.com/api/?name=${contact.name}&background=random`
-        }
-        alt={`Avatar by ${contact.name}`}
-        className={styles.image}
-      />
-      <div className={styles.description}>
-        <p className={styles.text}>
-          <FaUser size={"1em"} /> {contact.name}
-        </p>
-        <p className={styles.text}>
-          <FaPhone size={"1em"} /> {contact.number.slice(0, 12)}
-        </p>
-      </div>
-      <button className={styles.button} onClick={heandleDelete}>
-        Delete
-      </button>
-    </div>
+    <>
+      <motion.div
+        className={style.contactWrapper}
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -50 }}
+        transition={{ duration: 0.4 }}
+      >
+        <div className={style.personInfoWrapper}>
+          <div
+            className={style.personAvatar}
+            style={{ backgroundColor: contactData.color }}
+          >
+            {firstName[0]}
+            {secondName !== undefined && secondName[0]}
+          </div>
+          <div className={style.nameWrapper}>
+            <NavLink to={`/${contactData.id}`} className={style.personName}>
+              {contactData.name}
+            </NavLink>
+            <a
+              className={style.personNumber}
+              href={`tel:${contactData.number}`}
+            >
+              {contactData.number}
+            </a>
+          </div>
+        </div>
+
+        <div className={style.btnsWrapper}>
+          <button className={style.deleteBtn} onClick={handleDelete}>
+            Delete
+          </button>
+          <button className={style.favBtn} onClick={handleToggleFav}>
+            {isFav ? (
+              <FaHeart className={style.likeIcon} />
+            ) : (
+              <FaRegHeart className={style.likeIcon} />
+            )}
+          </button>
+        </div>
+      </motion.div>
+    </>
   );
-}
+};
+
+export default Contact;
